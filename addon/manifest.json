@@ -1,0 +1,21 @@
+{
+  "manifest_version": 2,
+  "name": "Scholar Sidekick",
+  "version": "0.1.0",
+  "description": "Verify a bibliography before importing it. Resolve identifiers, flag claimed-vs-resolved mismatches, surface retractions and open-access copies, then add clean items to your library.",
+  "homepage_url": "https://scholar-sidekick.com",
+  "author": "Mark Lavercombe",
+  "icons": {
+    "32": "chrome/content/icon-32.png",
+    "48": "chrome/content/icon-48.png",
+    "96": "chrome/content/icon-96.png"
+  },
+  "applications": {
+    "zotero": {
+      "id": "scholar-sidekick@scholar-sidekick.com",
+      "update_url": "https://scholar-sidekick.com/zotero-plugin/update.json",
+      "strict_min_version": "7.0",
+      "strict_max_version": "9.*"
+    }
+  }
+}

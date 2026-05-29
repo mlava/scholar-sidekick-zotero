@@ -1,0 +1,9 @@
+A typical manuscript reference list pasted as plain text — no .bib structure.
+The Zotero translator pipeline will return nothing here; the plugin must
+fall back to POST /api/detect to extract the identifiers below.
+
+1. Polack FP, Thomas SJ, Kitchin N, et al. Safety and efficacy of the BNT162b2 mRNA Covid-19 vaccine. N Engl J Med. 2020;383(27):2603-2615. doi:10.1056/NEJMoa2034577
+
+2. Huang C, Wang Y, Li X, et al. Clinical features of patients infected with 2019 novel coronavirus in Wuhan, China. Lancet. 2020;395(10223):497-506. PMID: 31986264
+
+3. Liao W-W, Asri M, Ebler J, et al. A pangenome reference of 47 human assemblies. arXiv:2210.06886

@@ -1,0 +1,31 @@
+{
+  "name": "scholar-sidekick-zotero",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scholar Sidekick Zotero 7 plugin — verify a bibliography before importing it.",
+  "type": "module",
+  "scripts": {
+    "build": "npm run check && node esbuild.config.mjs production && node scripts/package-xpi.mjs",
+    "release": "npm run build && node scripts/sync-to-public.mjs",
+    "dev": "node esbuild.config.mjs",
+    "check": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@vitest/coverage-v8": "^4.1.7",
+    "esbuild": "^0.28.0",
+    "jsdom": "^24.0.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5",
+    "vitest": "^4.1.7",
+    "zotero-types": "^3.1.9"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

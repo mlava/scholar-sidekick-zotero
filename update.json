@@ -1,0 +1,19 @@
+{
+  "addons": {
+    "scholar-sidekick@scholar-sidekick.com": {
+      "updates": [
+        {
+          "version": "0.1.0",
+          "update_link": "https://scholar-sidekick.com/zotero-plugin/scholar-sidekick-0.1.0.xpi",
+          "update_hash": "sha256:4dab0632cacd4f4b9928b1ab4078f585079880621d6b28e6a2737c5475893100",
+          "applications": {
+            "zotero": {
+              "strict_min_version": "7.0",
+              "strict_max_version": "9.*"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

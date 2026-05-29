@@ -1,0 +1,9 @@
+node_modules/
+addon/chrome/content/main.js
+addon/chrome/content/main.js.map
+dist/
+build/
+*.xpi
+.vitest-cache/
+.DS_Store
+coverage/

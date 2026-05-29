@@ -1,0 +1,325 @@
+<?xml version="1.0"?>
+<!--
+  addon/chrome/content/dialog.xhtml
+
+  The Scholar Sidekick import-boundary verifier modal.
+
+  This file is the VIEW only — all behavior is driven by the controller
+  object passed in via `window.arguments[0]` from src/ui/dialog.ts:
+
+    controller.pickFile()           -> Promise<string | null>
+    controller.runVerify(text, onProgress)
+                                    -> Promise<{ rows: PreviewRowSummary[] }>
+    controller.getCollections()     -> Promise<Array<{ id, label, depth }>>
+    controller.importSelected(ids, collectionId)
+                                    -> Promise<{ importedIds, skipped }>
+    controller.getApiKeyStatus()    -> { hasKey: boolean }
+
+  Keeping all Zotero / DOM glue in the controller (TS, unit-tested) means
+  this file can stay a thin shell that's safe to iterate on without
+  rebuilding main.js.
+-->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Verify &amp; import bibliography</title>
+    <style><![CDATA[
+      :root {
+        color-scheme: light dark;
+        --bg: Canvas;
+        --fg: CanvasText;
+        --muted: GrayText;
+        --border: ButtonBorder;
+        --accent: #2563eb;
+        --green: #15803d;
+        --amber: #b45309;
+        --red:   #b91c1c;
+        --row-hover: color-mix(in srgb, CanvasText 6%, transparent);
+      }
+      *, *::before, *::after { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font: 13px/1.4 -apple-system, "Segoe UI", system-ui, sans-serif;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+      }
+      .frame {
+        display: grid;
+        grid-template-rows: auto auto 1fr auto;
+        height: 100%;
+        width: 100%;
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 12px 14px;
+        gap: 10px;
+        min-width: 0;
+      }
+      h1 {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 0;
+      }
+      p.lede {
+        margin: 0;
+        color: var(--muted);
+      }
+      .input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: stretch;
+      }
+      textarea#paste {
+        min-height: 100px;
+        resize: vertical;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12px;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      .input-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-self: start;
+      }
+      button {
+        padding: 6px 10px;
+        font: inherit;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--bg);
+        color: var(--fg);
+        cursor: pointer;
+      }
+      button.primary {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+      }
+      button[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .progress {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+      }
+      .progress[data-active="1"] { display: flex; }
+      .progress .bar {
+        flex: 1;
+        height: 4px;
+        background: color-mix(in srgb, CanvasText 12%, transparent);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress .bar > span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--accent);
+        transition: width 120ms linear;
+      }
+      .results {
+        overflow: auto;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        min-height: 0;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      thead th {
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        text-align: left;
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--border);
+        font-weight: 600;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      tbody td {
+        padding: 8px;
+        border-bottom: 1px solid color-mix(in srgb, CanvasText 8%, transparent);
+        vertical-align: top;
+      }
+      tbody tr:hover { background: var(--row-hover); }
+      .badge {
+        display: inline-block;
+        padding: 1px 7px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        border: 1px solid currentColor;
+      }
+      .badge.verified     { color: var(--green); }
+      .badge.resolved     { color: var(--accent); }
+      .badge.mismatch     { color: var(--red); }
+      .badge.not_found    { color: var(--muted); }
+      .badge.ambiguous    { color: var(--amber); }
+      .badge.no_identifier{ color: var(--muted); }
+      .badge.error        { color: var(--red); }
+      .title { font-weight: 500; }
+      .identifier { color: var(--muted); font-size: 11px; font-family: ui-monospace, monospace; }
+      .flags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+      .flag {
+        display: inline-block;
+        padding: 0 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .flag.retracted { background: var(--red); color: white; }
+      .flag.concern   { background: var(--amber); color: white; }
+      .flag.oa        { background: var(--green); color: white; }
+      .flag.oa a      { color: inherit; text-decoration: underline; }
+      .mismatch-list {
+        margin: 4px 0 0;
+        padding-left: 16px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+      .footer > div { min-width: 0; }
+      .footer label { display: flex; gap: 6px; align-items: center; min-width: 0; }
+      /* Custom combobox — native <select> popups render transparent in a
+         chrome XHTML window (the main collection tree bleeds through). This
+         opaque, in-dialog dropdown sidesteps the OS popup entirely. */
+      .combo { position: relative; min-width: 0; }
+      .combo-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        width: 240px;
+        max-width: 240px;
+        padding: 4px 8px;
+        font: inherit;
+        text-align: left;
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .combo-btn .chev { color: var(--muted); flex-shrink: 0; }
+      .combo-btn .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .combo-list {
+        position: absolute;
+        bottom: calc(100% + 4px);
+        left: 0;
+        width: 240px;
+        max-height: 260px;
+        overflow-y: auto;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+        z-index: 1000;
+        display: none;
+      }
+      .combo-list[data-open="1"] { display: block; }
+      .combo-opt {
+        padding: 5px 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .combo-opt:hover { background: var(--row-hover); }
+      .combo-opt[aria-selected="1"] { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+      .footer .actions { display: flex; gap: 8px; flex-shrink: 0; }
+      .footer .actions button { white-space: nowrap; }
+      .api-status {
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .empty {
+        padding: 20px;
+        text-align: center;
+        color: var(--muted);
+      }
+    ]]></style>
+  </head>
+  <body>
+    <div class="frame">
+      <div>
+        <h1>Verify &amp; import bibliography</h1>
+        <p class="lede">
+          Paste a bibliography or pick a .bib / .ris file. Scholar Sidekick will
+          resolve each entry, flag mismatches, surface retractions and
+          open-access copies, and let you choose which to add.
+        </p>
+      </div>
+
+      <div class="input-row">
+        <textarea id="paste" placeholder="Paste DOIs, PMIDs, .bib entries, a manuscript reference list, …" spellcheck="false"></textarea>
+        <div class="input-buttons">
+          <button id="pick-file" type="button">Open .bib / .ris…</button>
+          <button id="verify" type="button" class="primary">Verify</button>
+        </div>
+      </div>
+
+      <div id="progress" class="progress">
+        <span id="progress-label">Preparing…</span>
+        <div class="bar"><span id="progress-bar"></span></div>
+      </div>
+
+      <div class="results" id="results">
+        <div class="empty" id="empty">No results yet — paste a bibliography and hit Verify.</div>
+        <table id="results-table" style="display:none">
+          <thead>
+            <tr>
+              <th style="width:32px"><input id="select-all" type="checkbox" aria-label="Select all"/></th>
+              <th style="width:110px">Verdict</th>
+              <th>Title</th>
+              <th style="width:200px">Identifier</th>
+            </tr>
+          </thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        <div>
+          <label>
+            Import into:
+            <span class="combo" id="collection">
+              <button type="button" class="combo-btn" id="collection-btn" aria-haspopup="listbox" aria-expanded="false">
+                <span class="label" id="collection-label">My Library (unfiled)</span>
+                <span class="chev">▾</span>
+              </button>
+              <div class="combo-list" id="collection-list" role="listbox"></div>
+            </span>
+          </label>
+          <div class="api-status" id="api-status">Anonymous tier</div>
+        </div>
+        <div class="actions">
+          <button id="cancel" type="button">Cancel</button>
+          <button id="import" type="button" class="primary" disabled="disabled">Import 0 selected</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="dialog.js"></script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+% No DOI/PMID/ISBN, but a title IS present — so this routes to the verifier's
+% title-search path (Crossref/PubMed/OpenAlex), NOT the no_identifier path.
+% An obscure/untraceable title returns `not_found` (high), and the row is not
+% auto-selected so the user won't add it by accident (they can still tick it
+% to import the claimed metadata). The bare `no_identifier` verdict only fires
+% for an entry with neither a title nor an identifier — which a real .bib
+% essentially never produces.
+@article{no-id-1,
+  title   = {Notes on an obscure 19th-century manuscript},
+  author  = {Anonymous},
+  journal = {Privately Circulated},
+  year    = {1887}
+}
