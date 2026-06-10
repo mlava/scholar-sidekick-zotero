@@ -32,7 +32,15 @@ The plugin works with no setup, hitting the Scholar Sidekick anonymous tier (rat
 
 ## Status
 
-v0.1 scaffold. The verifier and check pipelines are wired; the dialog XUL host is still in progress (see `src/ui/dialog.ts`). Tests in `test/` exercise the API client, ingest, orchestrator, preview, and import layers under mocked Zotero globals.
+**Released — v0.1.0.** The full verify→import flow (parse → verify claimed metadata → retraction/OA check → preview table → import resolved metadata) is wired end-to-end and proven on Zotero 9. Works on Zotero **7–9**; installed copies auto-update via `update.json`. Tests in `test/` exercise the API client, ingest, orchestrator, preview, and import layers under mocked Zotero globals.
+
+### Install
+
+1. Download `scholar-sidekick-0.1.0.xpi` from <https://scholar-sidekick.com/integrations/zotero> (or the GitHub Release).
+2. In Zotero: **Tools → Plugins → ⚙ → Install Plugin From File…**, choose the `.xpi`.
+3. Restart Zotero. The plugin appears under **Tools → Verify & import bibliography…**.
+
+No account or API key needed (anonymous tier); paste a Scholar Sidekick / RapidAPI key in `Settings → Scholar Sidekick` for higher rate limits. See [DISTRIBUTION.md](./DISTRIBUTION.md) for the release ritual.
 
 ## Development
 
