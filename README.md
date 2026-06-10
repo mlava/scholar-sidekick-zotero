@@ -40,7 +40,7 @@ The plugin works with no setup, hitting the Scholar Sidekick anonymous tier (rat
 2. In Zotero: **Tools → Plugins → ⚙ → Install Plugin From File…**, choose the `.xpi`.
 3. Restart Zotero. The plugin appears under **Tools → Verify & import bibliography…**.
 
-No account or API key needed (anonymous tier); paste a Scholar Sidekick / RapidAPI key in `Settings → Scholar Sidekick` for higher rate limits. See [DISTRIBUTION.md](./DISTRIBUTION.md) for the release ritual.
+No account or API key needed (anonymous tier); paste a Scholar Sidekick / RapidAPI key in `Settings → Scholar Sidekick` for higher rate limits.
 
 ## Development
 
