@@ -7,3 +7,6 @@ build/
 .vitest-cache/
 .DS_Store
 coverage/
+
+# internal outreach plan — not for the public repo
+DISTRIBUTION.md
